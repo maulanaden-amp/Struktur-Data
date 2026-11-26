@@ -104,18 +104,18 @@ Node *searchTree(Node *root, int id)
 // =====================================================
 Node *insertBST(Node *root, int id)
 {
-    if (root == NULL)
+    if (root == NULL) // kalo posisi saat kosong, maka buat node baru
         return buatNode(id);
-    if (id < root->id)
+    if (id < root->id) // kalo id saat ini lebih kecil dari root, id yg baru akan masuk ke kiri
         root->kiri = insertBST(root->kiri, id);
-    else if (id > root->id)
+    else if (id > root->id) // kalo id lebih besar dari root, id yg baru akan masuk ke kanan
         root->kanan = insertBST(root->kanan, id);
     return root;
 }
 
 Node *deleteBST(Node *root, int id)
 {
-    if (root == NULL)
+    if (root == NULL) // kalo posisi saat kosong, return NULL
         return NULL;
     if (id < root->id)
         root->kiri = deleteBST(root->kiri, id);
@@ -375,15 +375,15 @@ void tampilPohon(const string &nama, Node *root)
 void prosesInsert(int id, const string &nama, const string &genre, int tahun)
 {
     cout << "\n>>> INSERT ID " << id << endl;
-    if (cariBaris(id) != -1)
+    if (cariBaris(id) != -1) // mengecek apakah id baru sudah ada di database
     {
         cout << "ID " << id << " sudah ada, data tidak ditambahkan." << endl;
     }
-    else if (jumlahData >= MAKS)
+    else if (jumlahData >= MAKS) // mengecek apakah database penuh (MAKS 100)
     {
         cout << "Database penuh." << endl;
     }
-    else
+    else // menambahkan data baru ke database
     {
         db[jumlahData][0] = to_string(id);
         db[jumlahData][1] = nama;
@@ -401,11 +401,11 @@ void prosesDelete(int id)
 {
     cout << "\n>>> DELETE ID " << id << endl;
     int b = cariBaris(id);
-    if (b == -1)
+    if (b == -1) // mengecek apakah id yang ingin dihapus ada di database
     {
         cout << "ID " << id << " tidak ditemukan." << endl;
     }
-    else
+    else // hapus row sesuai id
     {
         string nama = db[b][1];
         // geser baris di bawahnya ke atas supaya tidak ada baris kosong
@@ -437,7 +437,7 @@ void prosesSearch(int metode, int id)
     }
 }
 
-void prosesView(int metode)
+void prosesView(int metode) // menampilkan tabal
 {
     cout << "\n>>> VIEW (inorder traversal "
          << (metode == 1 ? "BST" : "AVL") << ")" << endl;
@@ -464,6 +464,7 @@ int bacaInt(const string &teks)
     return x;
 }
 
+// untuk men-delay output supaya tidak langsung muncul semua sekaligus
 void tungguEnter(const string &pesan)
 {
     cout << "\n[Tekan Enter " << pesan << "] ";
@@ -491,7 +492,7 @@ void menuTree(int metode)
         cout << "1. Insert\n2. Delete\n3. Search\n4. View\n0. Kembali\n";
         pilih = bacaInt("Pilih: ");
 
-        if (pilih == 1)
+        if (pilih == 1) // input 1
         {
             int id = bacaInt("ID Game     : ");
             string namaGame, genre;
@@ -503,22 +504,22 @@ void menuTree(int metode)
             prosesInsert(id, namaGame, genre, tahun);
             tampilkanPohonDanKembali(metode);
         }
-        else if (pilih == 2)
+        else if (pilih == 2) // input 2
         {
             prosesDelete(bacaInt("ID yang dihapus: "));
             tampilkanPohonDanKembali(metode);
         }
-        else if (pilih == 3)
+        else if (pilih == 3) // input 3
         {
             prosesSearch(metode, bacaInt("ID yang dicari: "));
             tampilkanPohonDanKembali(metode);
         }
-        else if (pilih == 4)
+        else if (pilih == 4) // input 4
         {
             prosesView(metode);
             tampilkanPohonDanKembali(metode);
         }
-        else if (pilih != 0)
+        else if (pilih != 0) // input tidak ada dalam daftar pilihan
         {
             cout << "Menu tidak ada." << endl;
         }
