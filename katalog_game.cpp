@@ -1,28 +1,43 @@
-
 // =====================================================
 // Sistem Pendataan Game Digital
-// Implementasi BST dan AVL Tree (key = ID Game)
+// BST dan AVL Tree memakai DATABASE YANG SAMA
+// Database = array 2 dimensi (seperti tabel), key pohon = ID Game
 // Operasi: Insert, Delete, Search, View
 // =====================================================
 #include <iostream>
 #include <string>
 #include <iomanip>
+#include <vector>
+#include <cstdlib>
 using namespace std;
 
-struct Game
-{
-    int id;
-    string nama;
-    string genre;
-    int tahun;
-};
+// =====================================================
+// DATABASE (array 2 dimensi, 1 database untuk BST & AVL)
+// kolom: [0] ID Game | [1] Nama Game | [2] Genre | [3] Tahun Rilis
+// =====================================================
+const int MAKS = 100;
 
-void cetakGame(const Game &g)
+string db[MAKS][4] = {
+    {"101", "Minecraft", "Sandbox", "2011"},
+    {"102", "GTA V", "Action", "2013"},
+    {"103", "Valorant", "FPS", "2020"},
+    {"104", "The Sims 4", "Simulation", "2014"},
+    {"105", "Elden Ring", "RPG", "2022"},
+    {"106", "Dota 2", "MOBA", "2013"},
+    {"107", "Cyberpunk 2077", "RPG", "2020"},
+    {"108", "Resident Evil 4", "Survival Horror", "2023"},
+    {"109", "Stardew Valley", "Simulation", "2016"},
+    {"110", "Forza Horizon 5", "Racing", "2021"}};
+int jumlahData = 10;
+
+// mencari baris di database berdasarkan ID (-1 jika tidak ada)
+int cariBaris(int id)
 {
-    cout << left << setw(6) << g.id
-         << setw(20) << g.nama
-         << setw(18) << g.genre
-         << g.tahun << endl;
+    string s = to_string(id);
+    for (int i = 0; i < jumlahData; i++)
+        if (db[i][0] == s)
+            return i;
+    return -1;
 }
 
 void cetakHeader()
@@ -34,80 +49,51 @@ void cetakHeader()
     cout << string(50, '-') << endl;
 }
 
-// =====================================================
-// BAGIAN 1 : BINARY SEARCH TREE (BST)
-// =====================================================
-struct NodeBST
+void cetakBaris(int baris)
 {
-    Game data;
-    NodeBST *kiri;
-    NodeBST *kanan;
+    cout << left << setw(6) << db[baris][0]
+         << setw(20) << db[baris][1]
+         << setw(18) << db[baris][2]
+         << db[baris][3] << endl;
+}
+
+// =====================================================
+// NODE POHON (dipakai BST dan AVL)
+// Node hanya menyimpan ID sebagai key, data lengkap ada di db
+// =====================================================
+struct Node
+{
+    int id;
+    Node *kiri;
+    Node *kanan;
+    int tinggi; // hanya dipakai oleh AVL
 };
 
-NodeBST *buatNodeBST(Game g)
+Node *rootBST = NULL;
+Node *rootAVL = NULL;
+
+Node *buatNode(int id)
 {
-    NodeBST *n = new NodeBST;
-    n->data = g;
+    Node *n = new Node;
+    n->id = id;
     n->kiri = n->kanan = NULL;
+    n->tinggi = 1;
     return n;
 }
 
-NodeBST *insertBST(NodeBST *root, Game g)
-{
-    if (root == NULL)
-        return buatNodeBST(g);
-    if (g.id < root->data.id)
-        root->kiri = insertBST(root->kiri, g);
-    else if (g.id > root->data.id)
-        root->kanan = insertBST(root->kanan, g);
-    else
-        cout << "ID " << g.id << " sudah ada, data tidak ditambahkan.\n";
-    return root;
-}
-
-NodeBST *nodeTerkecilBST(NodeBST *n)
+Node *nodeTerkecil(Node *n)
 {
     while (n->kiri != NULL)
         n = n->kiri;
     return n;
 }
 
-NodeBST *deleteBST(NodeBST *root, int id)
+// Search sama untuk BST dan AVL (berdasarkan key)
+Node *searchTree(Node *root, int id)
 {
-    if (root == NULL)
-        return NULL;
-    if (id < root->data.id)
-        root->kiri = deleteBST(root->kiri, id);
-    else if (id > root->data.id)
-        root->kanan = deleteBST(root->kanan, id);
-    else
+    while (root != NULL && root->id != id)
     {
-        // kasus 1 & 2: 0 atau 1 anak
-        if (root->kiri == NULL)
-        {
-            NodeBST *tmp = root->kanan;
-            delete root;
-            return tmp;
-        }
-        if (root->kanan == NULL)
-        {
-            NodeBST *tmp = root->kiri;
-            delete root;
-            return tmp;
-        }
-        // kasus 3: 2 anak -> ganti dengan successor (terkecil di kanan)
-        NodeBST *succ = nodeTerkecilBST(root->kanan);
-        root->data = succ->data;
-        root->kanan = deleteBST(root->kanan, succ->data.id);
-    }
-    return root;
-}
-
-NodeBST *searchBST(NodeBST *root, int id)
-{
-    while (root != NULL && root->data.id != id)
-    {
-        if (id < root->data.id)
+        if (id < root->id)
             root = root->kiri;
         else
             root = root->kanan;
@@ -115,66 +101,67 @@ NodeBST *searchBST(NodeBST *root, int id)
     return root;
 }
 
-void inorderBST(NodeBST *root)
+// =====================================================
+// BST
+// =====================================================
+Node *insertBST(Node *root, int id)
 {
     if (root == NULL)
-        return;
-    inorderBST(root->kiri);
-    cetakGame(root->data);
-    inorderBST(root->kanan);
+        return buatNode(id);
+    if (id < root->id)
+        root->kiri = insertBST(root->kiri, id);
+    else if (id > root->id)
+        root->kanan = insertBST(root->kanan, id);
+    return root;
 }
 
-int tinggiBST(NodeBST *n)
-{
-    if (n == NULL)
-        return 0;
-    int a = tinggiBST(n->kiri), b = tinggiBST(n->kanan);
-    return 1 + (a > b ? a : b);
-}
-
-// menampilkan bentuk pohon (miring ke kiri: kanan di atas, kiri di bawah)
-void tampilPohonBST(NodeBST *root, int spasi = 0)
+Node *deleteBST(Node *root, int id)
 {
     if (root == NULL)
-        return;
-    tampilPohonBST(root->kanan, spasi + 6);
-    cout << string(spasi, ' ') << root->data.id << endl;
-    tampilPohonBST(root->kiri, spasi + 6);
+        return NULL;
+    if (id < root->id)
+        root->kiri = deleteBST(root->kiri, id);
+    else if (id > root->id)
+        root->kanan = deleteBST(root->kanan, id);
+    else
+    {
+        // kasus 1 & 2: 0 atau 1 anak
+        if (root->kiri == NULL)
+        {
+            Node *tmp = root->kanan;
+            delete root;
+            return tmp;
+        }
+        if (root->kanan == NULL)
+        {
+            Node *tmp = root->kiri;
+            delete root;
+            return tmp;
+        }
+        // kasus 3: 2 anak -> ganti dengan successor (terkecil di kanan)
+        Node *succ = nodeTerkecil(root->kanan);
+        root->id = succ->id;
+        root->kanan = deleteBST(root->kanan, succ->id);
+    }
+    return root;
 }
 
 // =====================================================
-// BAGIAN 2 : AVL TREE
+// AVL TREE
 // =====================================================
-struct NodeAVL
-{
-    Game data;
-    NodeAVL *kiri;
-    NodeAVL *kanan;
-    int tinggi;
-};
-
-int tinggiAVL(NodeAVL *n) { return (n == NULL) ? 0 : n->tinggi; }
+int tinggiAVL(Node *n) { return (n == NULL) ? 0 : n->tinggi; }
 
 int maks(int a, int b) { return (a > b) ? a : b; }
 
-int faktorSeimbang(NodeAVL *n)
+int faktorSeimbang(Node *n)
 {
     return (n == NULL) ? 0 : tinggiAVL(n->kiri) - tinggiAVL(n->kanan);
 }
 
-NodeAVL *buatNodeAVL(Game g)
+Node *rotasiKanan(Node *y)
 {
-    NodeAVL *n = new NodeAVL;
-    n->data = g;
-    n->kiri = n->kanan = NULL;
-    n->tinggi = 1;
-    return n;
-}
-
-NodeAVL *rotasiKanan(NodeAVL *y)
-{
-    NodeAVL *x = y->kiri;
-    NodeAVL *t2 = x->kanan;
+    Node *x = y->kiri;
+    Node *t2 = x->kanan;
     x->kanan = y;
     y->kiri = t2;
     y->tinggi = 1 + maks(tinggiAVL(y->kiri), tinggiAVL(y->kanan));
@@ -182,10 +169,10 @@ NodeAVL *rotasiKanan(NodeAVL *y)
     return x;
 }
 
-NodeAVL *rotasiKiri(NodeAVL *x)
+Node *rotasiKiri(Node *x)
 {
-    NodeAVL *y = x->kanan;
-    NodeAVL *t2 = y->kiri;
+    Node *y = x->kanan;
+    Node *t2 = y->kiri;
     y->kiri = x;
     x->kanan = t2;
     x->tinggi = 1 + maks(tinggiAVL(x->kiri), tinggiAVL(x->kanan));
@@ -194,7 +181,7 @@ NodeAVL *rotasiKiri(NodeAVL *x)
 }
 
 // menyeimbangkan node (dipakai oleh insert dan delete)
-NodeAVL *seimbangkan(NodeAVL *n)
+Node *seimbangkan(Node *n)
 {
     n->tinggi = 1 + maks(tinggiAVL(n->kiri), tinggiAVL(n->kanan));
     int fs = faktorSeimbang(n);
@@ -216,287 +203,292 @@ NodeAVL *seimbangkan(NodeAVL *n)
     return n;
 }
 
-NodeAVL *insertAVL(NodeAVL *root, Game g)
+Node *insertAVL(Node *root, int id)
 {
     if (root == NULL)
-        return buatNodeAVL(g);
-    if (g.id < root->data.id)
-        root->kiri = insertAVL(root->kiri, g);
-    else if (g.id > root->data.id)
-        root->kanan = insertAVL(root->kanan, g);
+        return buatNode(id);
+    if (id < root->id)
+        root->kiri = insertAVL(root->kiri, id);
+    else if (id > root->id)
+        root->kanan = insertAVL(root->kanan, id);
     else
-    {
-        cout << "ID " << g.id << " sudah ada, data tidak ditambahkan.\n";
         return root;
-    }
     return seimbangkan(root);
 }
 
-NodeAVL *nodeTerkecilAVL(NodeAVL *n)
-{
-    while (n->kiri != NULL)
-        n = n->kiri;
-    return n;
-}
-
-NodeAVL *deleteAVL(NodeAVL *root, int id)
+Node *deleteAVL(Node *root, int id)
 {
     if (root == NULL)
         return NULL;
-    if (id < root->data.id)
+    if (id < root->id)
         root->kiri = deleteAVL(root->kiri, id);
-    else if (id > root->data.id)
+    else if (id > root->id)
         root->kanan = deleteAVL(root->kanan, id);
     else
     {
         if (root->kiri == NULL)
         {
-            NodeAVL *tmp = root->kanan;
+            Node *tmp = root->kanan;
             delete root;
             return tmp;
         }
         if (root->kanan == NULL)
         {
-            NodeAVL *tmp = root->kiri;
+            Node *tmp = root->kiri;
             delete root;
             return tmp;
         }
-        NodeAVL *succ = nodeTerkecilAVL(root->kanan);
-        root->data = succ->data;
-        root->kanan = deleteAVL(root->kanan, succ->data.id);
+        Node *succ = nodeTerkecil(root->kanan);
+        root->id = succ->id;
+        root->kanan = deleteAVL(root->kanan, succ->id);
     }
     return seimbangkan(root);
 }
 
-NodeAVL *searchAVL(NodeAVL *root, int id)
-{
-    while (root != NULL && root->data.id != id)
-    {
-        if (id < root->data.id)
-            root = root->kiri;
-        else
-            root = root->kanan;
-    }
-    return root;
-}
-
-void inorderAVL(NodeAVL *root)
+// =====================================================
+// TAMPILAN (View & Pohon)
+// =====================================================
+// View: inorder traversal -> data tampil berurutan berdasarkan ID
+void inorderTabel(Node *root)
 {
     if (root == NULL)
         return;
-    inorderAVL(root->kiri);
-    cetakGame(root->data);
-    inorderAVL(root->kanan);
+    inorderTabel(root->kiri);
+    cetakBaris(cariBaris(root->id));
+    inorderTabel(root->kanan);
 }
 
-void tampilPohonAVL(NodeAVL *root, int spasi = 0)
+// mengumpulkan ID ke array secara inorder (hasilnya urut naik)
+void kumpulkanId(Node *n, vector<int> &arr)
 {
-    if (root == NULL)
+    if (n == NULL)
         return;
-    tampilPohonAVL(root->kanan, spasi + 6);
-    cout << string(spasi, ' ') << root->data.id << endl;
-    tampilPohonAVL(root->kiri, spasi + 6);
+    kumpulkanId(n->kiri, arr);
+    arr.push_back(n->id);
+    kumpulkanId(n->kanan, arr);
+}
+
+int tinggiPohon(Node *n)
+{
+    if (n == NULL)
+        return 0;
+    int a = tinggiPohon(n->kiri), b = tinggiPohon(n->kanan);
+    return 1 + maks(a, b);
+}
+
+// mencetak pohon miring: anak kanan di atas, anak kiri di bawah
+void cetakPohon(Node *n, int spasi)
+{
+    if (n == NULL)
+        return;
+    cetakPohon(n->kanan, spasi + 4);
+    cout << string(spasi, ' ') << n->id << endl;
+    cetakPohon(n->kiri, spasi + 4);
+}
+
+void tampilSatuPohon(const string &nama, Node *root)
+{
+    vector<int> arr;
+    kumpulkanId(root, arr);
+
+    cout << "\n[" << nama << "]  tinggi = " << tinggiPohon(root) << endl;
+    cout << "Array ID Game : [";
+    for (size_t i = 0; i < arr.size(); i++)
+    {
+        if (i > 0)
+            cout << ", ";
+        cout << arr[i];
+    }
+    cout << "]" << endl;
+
+    cout << "Tampilan Tree (atas = anak kanan, bawah = anak kiri):" << endl;
+    if (root == NULL)
+    {
+        cout << "(pohon kosong)" << endl;
+        return;
+    }
+    cetakPohon(root->kanan, 4);
+    cout << root->id << "  <-- ROOT" << endl;
+    cetakPohon(root->kiri, 4);
+}
+
+// dipanggil setelah setiap interaksi (insert, delete, search, view)
+void tampilPohon()
+{
+    cout << "\n=============== TAMPILAN POHON ===============";
+    tampilSatuPohon("BST", rootBST);
+    tampilSatuPohon("AVL", rootAVL);
+    cout << "==============================================" << endl;
 }
 
 // =====================================================
-// DATA AWAL (10 data, dipakai BST dan AVL)
+// PROSES OPERASI (database dipakai bersama BST & AVL)
 // =====================================================
-const int JUMLAH_AWAL = 10;
-Game dataAwal[JUMLAH_AWAL] = {
-    {101, "Minecraft", "Sandbox", 2011},
-    {102, "GTA V", "Action", 2013},
-    {103, "Valorant", "FPS", 2020},
-    {104, "The Sims 4", "Simulation", 2014},
-    {105, "Elden Ring", "RPG", 2022},
-    {106, "Dota 2", "MOBA", 2013},
-    {107, "Cyberpunk 2077", "RPG", 2020},
-    {108, "Resident Evil 4", "Survival Horror", 2023},
-    {109, "Stardew Valley", "Simulation", 2016},
-    {110, "Forza Horizon 5", "Racing", 2021}};
-
-NodeBST *rootBST = NULL;
-NodeAVL *rootAVL = NULL;
-
-void isiDataAwal()
+void prosesInsert(int id, const string &nama, const string &genre, int tahun)
 {
-    for (int i = 0; i < JUMLAH_AWAL; i++)
+    cout << "\n>>> INSERT ID " << id << endl;
+    if (cariBaris(id) != -1)
     {
-        rootBST = insertBST(rootBST, dataAwal[i]);
-        rootAVL = insertAVL(rootAVL, dataAwal[i]);
+        cout << "ID " << id << " sudah ada, data tidak ditambahkan." << endl;
+    }
+    else if (jumlahData >= MAKS)
+    {
+        cout << "Database penuh." << endl;
+    }
+    else
+    {
+        db[jumlahData][0] = to_string(id);
+        db[jumlahData][1] = nama;
+        db[jumlahData][2] = genre;
+        db[jumlahData][3] = to_string(tahun);
+        jumlahData++;
+        rootBST = insertBST(rootBST, id);
+        rootAVL = insertAVL(rootAVL, id);
+        cout << "Data berhasil ditambahkan (BST dan AVL ikut berubah)." << endl;
+    }
+    tampilPohon();
+}
+
+void prosesDelete(int id)
+{
+    cout << "\n>>> DELETE ID " << id << endl;
+    int b = cariBaris(id);
+    if (b == -1)
+    {
+        cout << "ID " << id << " tidak ditemukan." << endl;
+    }
+    else
+    {
+        string nama = db[b][1];
+        // geser baris di bawahnya ke atas supaya tidak ada baris kosong
+        for (int i = b; i < jumlahData - 1; i++)
+            for (int k = 0; k < 4; k++)
+                db[i][k] = db[i + 1][k];
+        jumlahData--;
+        rootBST = deleteBST(rootBST, id);
+        rootAVL = deleteAVL(rootAVL, id);
+        cout << "Data " << nama << " (ID " << id
+             << ") dihapus (BST dan AVL ikut berubah)." << endl;
+    }
+    tampilPohon();
+}
+
+void prosesSearch(int id)
+{
+    cout << "\n>>> SEARCH ID " << id << endl;
+    Node *a = searchTree(rootBST, id);
+    Node *b = searchTree(rootAVL, id);
+    cout << "[BST] " << (a ? "ditemukan" : "tidak ditemukan") << endl;
+    cout << "[AVL] " << (b ? "ditemukan" : "tidak ditemukan") << endl;
+    if (a != NULL)
+    {
+        cetakHeader();
+        cetakBaris(cariBaris(a->id));
+    }
+    tampilPohon();
+}
+
+// pilihan: 1 = lewat BST, 2 = lewat AVL
+void prosesView(int pilihan)
+{
+    cout << "\n>>> VIEW (inorder traversal "
+         << (pilihan == 1 ? "BST" : "AVL") << ")" << endl;
+    cetakHeader();
+    inorderTabel(pilihan == 1 ? rootBST : rootAVL);
+    tampilPohon();
+}
+
+// membangun BST dan AVL dari 10 data awal di database
+void bangunPohonDariDatabase()
+{
+    for (int i = 0; i < jumlahData; i++)
+    {
+        int id = stoi(db[i][0]);
+        rootBST = insertBST(rootBST, id);
+        rootAVL = insertAVL(rootAVL, id);
     }
 }
 
 // =====================================================
-// DEMO : contoh implementasi dari soal (111, 103, 105)
+// DEMO & MENU
 // =====================================================
-void tampilKeduaPohon(const string &judul)
-{
-    cout << "\n=== " << judul << " ===\n";
-    cout << "\n[BST] tinggi = " << tinggiBST(rootBST) << endl;
-    tampilPohonBST(rootBST);
-    cout << "\n[AVL] tinggi = " << tinggiAVL(rootAVL) << endl;
-    tampilPohonAVL(rootAVL);
-}
-
 void demo()
 {
-    tampilKeduaPohon("Setelah 10 data awal");
-
-    Game baru = {111, "Hollow Knight", "Metroidvania", 2017};
-    rootBST = insertBST(rootBST, baru);
-    rootAVL = insertAVL(rootAVL, baru);
-    tampilKeduaPohon("Setelah INSERT ID 111");
-
-    rootBST = deleteBST(rootBST, 103);
-    rootAVL = deleteAVL(rootAVL, 103);
-    tampilKeduaPohon("Setelah DELETE ID 103 (Valorant)");
-
-    cout << "\n=== SEARCH ID 105 ===\n";
-    NodeBST *a = searchBST(rootBST, 105);
-    NodeAVL *b = searchAVL(rootAVL, 105);
-    cetakHeader();
-    if (a)
-    {
-        cout << "[BST] ";
-        cetakGame(a->data);
-    }
-    if (b)
-    {
-        cout << "[AVL] ";
-        cetakGame(b->data);
-    }
-
-    cout << "\n=== VIEW (inorder) ===\n";
-    cetakHeader();
-    inorderBST(rootBST);
+    cout << "\n######## DEMO OTOMATIS ########";
+    prosesInsert(111, "Hollow Knight", "Metroidvania", 2017);
+    prosesDelete(103);
+    prosesSearch(105);
+    prosesView(1);
 }
 
-// =====================================================
-// MENU
-// =====================================================
-Game inputGame()
+int bacaInt(const string &teks)
 {
-    Game g;
-    cout << "ID Game     : ";
-    cin >> g.id;
-    cin.ignore();
-    cout << "Nama Game   : ";
-    getline(cin, g.nama);
-    cout << "Genre       : ";
-    getline(cin, g.genre);
-    cout << "Tahun Rilis : ";
-    cin >> g.tahun;
-    return g;
-}
-
-void menuTree(bool pakaiAVL)
-{
-    int pilih;
-    do
+    int x;
+    cout << teks;
+    while (!(cin >> x))
     {
-        cout << "\n--- MENU " << (pakaiAVL ? "AVL TREE" : "BST") << " ---\n";
-        cout << "1. Insert\n2. Delete\n3. Search\n4. View (inorder)\n";
-        cout << "5. Tampilkan bentuk pohon\n0. Kembali\nPilih: ";
-        cin >> pilih;
-
-        if (pilih == 1)
-        {
-            Game g = inputGame();
-            if (pakaiAVL)
-                rootAVL = insertAVL(rootAVL, g);
-            else
-                rootBST = insertBST(rootBST, g);
-            cout << "Proses insert selesai.\n";
-        }
-        else if (pilih == 2)
-        {
-            int id;
-            cout << "ID yang dihapus: ";
-            cin >> id;
-            bool ada = pakaiAVL ? (searchAVL(rootAVL, id) != NULL)
-                                : (searchBST(rootBST, id) != NULL);
-            if (!ada)
-                cout << "ID " << id << " tidak ditemukan.\n";
-            else
-            {
-                if (pakaiAVL)
-                    rootAVL = deleteAVL(rootAVL, id);
-                else
-                    rootBST = deleteBST(rootBST, id);
-                cout << "Data berhasil dihapus.\n";
-            }
-        }
-        else if (pilih == 3)
-        {
-            int id;
-            cout << "ID yang dicari: ";
-            cin >> id;
-            if (pakaiAVL)
-            {
-                NodeAVL *h = searchAVL(rootAVL, id);
-                if (h)
-                {
-                    cetakHeader();
-                    cetakGame(h->data);
-                }
-                else
-                    cout << "ID " << id << " tidak ditemukan.\n";
-            }
-            else
-            {
-                NodeBST *h = searchBST(rootBST, id);
-                if (h)
-                {
-                    cetakHeader();
-                    cetakGame(h->data);
-                }
-                else
-                    cout << "ID " << id << " tidak ditemukan.\n";
-            }
-        }
-        else if (pilih == 4)
-        {
-            cetakHeader();
-            if (pakaiAVL)
-                inorderAVL(rootAVL);
-            else
-                inorderBST(rootBST);
-        }
-        else if (pilih == 5)
-        {
-            if (pakaiAVL)
-            {
-                cout << "Tinggi AVL = " << tinggiAVL(rootAVL) << endl;
-                tampilPohonAVL(rootAVL);
-            }
-            else
-            {
-                cout << "Tinggi BST = " << tinggiBST(rootBST) << endl;
-                tampilPohonBST(rootBST);
-            }
-        }
-    } while (pilih != 0);
+        if (cin.eof())
+            exit(0);
+        cin.clear();
+        cin.ignore(1000, '\n');
+        cout << "Input harus angka, ulangi: ";
+    }
+    cin.ignore(1000, '\n');
+    return x;
 }
 
 int main()
 {
-    isiDataAwal();
+    bangunPohonDariDatabase();
+    cout << "Kondisi awal (10 data):";
+    tampilPohon();
+
     int pilih;
     do
     {
         cout << "\n===== SISTEM PENDATAAN GAME DIGITAL =====\n";
-        cout << "1. Menu BST\n2. Menu AVL Tree\n";
-        cout << "3. Demo otomatis (Insert 111, Delete 103, Search 105, View)\n";
-        cout << "0. Keluar\nPilih: ";
-        cin >> pilih;
+        cout << "1. Insert\n2. Delete\n3. Search\n4. View\n";
+        cout << "5. Demo otomatis (Insert 111, Delete 103, Search 105, View)\n";
+        cout << "0. Keluar\n";
+        pilih = bacaInt("Pilih: ");
+
         if (pilih == 1)
-            menuTree(false);
+        {
+            int id = bacaInt("ID Game     : ");
+            string nama, genre;
+            cout << "Nama Game   : ";
+            getline(cin, nama);
+            cout << "Genre       : ";
+            getline(cin, genre);
+            int tahun = bacaInt("Tahun Rilis : ");
+            prosesInsert(id, nama, genre, tahun);
+        }
         else if (pilih == 2)
-            menuTree(true);
+        {
+            prosesDelete(bacaInt("ID yang dihapus: "));
+        }
         else if (pilih == 3)
+        {
+            prosesSearch(bacaInt("ID yang dicari: "));
+        }
+        else if (pilih == 4)
+        {
+            int p = bacaInt("Lihat lewat (1 = BST, 2 = AVL): ");
+            if (p == 1 || p == 2)
+                prosesView(p);
+            else
+                cout << "Pilihan tidak valid." << endl;
+        }
+        else if (pilih == 5)
+        {
             demo();
+        }
+        else if (pilih != 0)
+        {
+            cout << "Menu tidak ada." << endl;
+        }
     } while (pilih != 0);
 
-    cout << "Program selesai.\n";
+    cout << "Program selesai." << endl;
     return 0;
 }
