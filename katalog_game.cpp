@@ -36,7 +36,7 @@ int cariBaris(int id)
     return -1;
 }
 
-void cetakHeader()
+void cetakHeader() // header tabel
 {
     cout << left << setw(6) << "ID"
          << setw(20) << "Nama Game"
@@ -45,7 +45,7 @@ void cetakHeader()
     cout << string(50, '-') << endl;
 }
 
-void cetakBaris(int baris)
+void cetakBaris(int baris) // baris tabel (4)
 {
     cout << left << setw(6) << db[baris][0]
          << setw(20) << db[baris][1]
@@ -89,7 +89,7 @@ int maks(int a, int b) { return (a > b) ? a : b; }
 // Search sama untuk BST dan AVL (berdasarkan key)
 Node *searchTree(Node *root, int id)
 {
-    while (root != NULL && root->id != id)
+    while (root != NULL && root->id != id) // akan berhenti jika root = NULL ATAU id yang dicari ketemu
     {
         if (id < root->id) // kalo id lebih besar dari root dia akan cari ke kiri
             root = root->kiri;
@@ -104,7 +104,7 @@ Node *searchTree(Node *root, int id)
 // =====================================================
 Node *insertBST(Node *root, int id)
 {
-    if (root == NULL) // kalo posisi saat kosong, maka buat node baru
+    if (root == NULL) // kalo posisi saat ini kosong, maka buat node baru
         return buatNode(id);
     if (id < root->id) // kalo id saat ini lebih kecil dari root, id yg baru akan masuk ke kiri
         root->kiri = insertBST(root->kiri, id);
@@ -117,11 +117,11 @@ Node *deleteBST(Node *root, int id)
 {
     if (root == NULL) // kalo posisi saat kosong, return NULL
         return NULL;
-    if (id < root->id)
+    if (id < root->id) // kalo id lebih kecil dari id saat ini, cari ke kiri
         root->kiri = deleteBST(root->kiri, id);
-    else if (id > root->id)
+    else if (id > root->id) // kalo id lebih besar dari id saat ini, cari ke kanan
         root->kanan = deleteBST(root->kanan, id);
-    else
+    else // kalo id yg ingin dihapus ketemu
     {
         // kasus 1 & 2: 0 atau 1 anak
         if (root->kiri == NULL)
@@ -149,12 +149,12 @@ Node *deleteBST(Node *root, int id)
 // =====================================================
 int tinggiAVL(Node *n) { return (n == NULL) ? 0 : n->tinggi; }
 
-int faktorSeimbang(Node *n)
+int faktorSeimbang(Node *n) // rumus keseimbangan Tree
 {
     return (n == NULL) ? 0 : tinggiAVL(n->kiri) - tinggiAVL(n->kanan);
 }
 
-Node *rotasiKanan(Node *y)
+Node *rotasiKanan(Node *y) // ketika tree condong ke kiri
 {
     Node *x = y->kiri;
     Node *t2 = x->kanan;
@@ -165,7 +165,7 @@ Node *rotasiKanan(Node *y)
     return x;
 }
 
-Node *rotasiKiri(Node *x)
+Node *rotasiKiri(Node *x) // ketika tree condong ke kanan
 {
     Node *y = x->kanan;
     Node *t2 = y->kiri;
@@ -184,15 +184,15 @@ Node *seimbangkan(Node *n)
 
     if (fs > 1 && faktorSeimbang(n->kiri) >= 0) // Left-Left
         return rotasiKanan(n);
-    if (fs > 1 && faktorSeimbang(n->kiri) < 0)
-    { // Left-Right
+    if (fs > 1 && faktorSeimbang(n->kiri) < 0) // Left-Right
+    {
         n->kiri = rotasiKiri(n->kiri);
         return rotasiKanan(n);
     }
     if (fs < -1 && faktorSeimbang(n->kanan) <= 0) // Right-Right
         return rotasiKiri(n);
-    if (fs < -1 && faktorSeimbang(n->kanan) > 0)
-    { // Right-Left
+    if (fs < -1 && faktorSeimbang(n->kanan) > 0) // Right-Left
+    {
         n->kanan = rotasiKanan(n->kanan);
         return rotasiKiri(n);
     }
